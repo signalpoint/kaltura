@@ -38,3 +38,21 @@ Enable the module as usual in your settings.js file:
 Drupal.modules.contrib['kaltura'] = {};
 ```
 
+Add the module's settings to your settings.js file:
+
+```
+/*******************|
+ * Kaltura Settings |
+ *******************/
+drupalgap.settings.kaltura = {
+  KS: '', /* do not change */
+  serviceUrl: 'http://www.kaltura.com/', /* do not change */
+  secret: '', /* set to your "User Secret" key */
+  partnerId: 1234567890 /* set to your Kaltura Partner ID */
+};
+```
+
+Then set the secret and partnerId values above with the values obtained here:
+
+https://kmc.kaltura.com/index.php/kmc/kmc#account|integration
+
