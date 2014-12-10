@@ -1,10 +1,19 @@
+var kConfig = null;
+var kClient = null;
+var kSession = null;
+
 /**
  * Implements hook_install().
  */
 function kaltura_install() {
   try {
     drupalgap_add_js('app/libraries/kaltura/kaltura.min.js');
-    kaltura_session_start();
+    kaltura_session_start({
+        success: function(result) {
+          if (result && result[0]) { kSession = result[0]; }
+          else { console.log('kaltura_install - failed to start session!'); }
+        }
+    });
   }
   catch (error) { console.log('kaltura_install - ' + error); }
 }
@@ -49,17 +58,10 @@ function field_kaltura_field_formatter_view_pageshow(item) {
   try {
     kaltura_media_get({
         item: item,
-        cb: function (success, results) {
-          if(!success) {
-            drupalgap_alert(results);
-            return;
+        success: function(success, data) {
+          if (success) {
+            $('#' + data.id).html(theme('image', { path: data.dataUrl })).trigger('create');
           }
-          if(results.code && results.message) {
-            drupalgap_alert(results.message);
-            return;
-          }
-          dpm('kaltura_media_get - results');
-          console.log(results);
         }
     });
   }
@@ -93,34 +95,21 @@ function theme_field_kaltura_entryid(variables) {
 /***********************|
  * Kaltura Services API |
  ***********************/
+
+/**
+ * Each request needs a new KalturaClient generated (I think).
+ */
  
 /**
  * Starts a Kaltura session, and saves the session id in the KS string.
  */
-function kaltura_session_start() {
+function kaltura_session_start(options) {
   try {
-    var cb = function (success, results) {
-      if (!success) {
-        drupalgap_alert(results);
-        return;
-      }
-      if(results.code && results.message) {
-        drupalgap_alert(results.message);
-        return;
-      }
-      drupalgap.settings.kaltura.KS = results;
-      dpm('set the KS string');
-    };
-    var partnerId = drupalgap.settings.kaltura.partnerId;
-    var config = new KalturaConfiguration(partnerId);
-    config.serviceUrl = drupalgap.settings.kaltura.serviceUrl;
-    var client = new KalturaClient(config);
-    var secret = drupalgap.settings.kaltura.secret;
-    var userId = "";
-    var type = null;
-    var expiry = null;
-    var privileges = null;
-    var result = client.session.start(cb, secret, userId, type, partnerId, expiry, privileges);
+    options.method = 'POST';
+    options.path = 'kaltura/session_start.json';
+    options.service = 'kaltura';
+    options.resource = 'session_start';
+    Drupal.services.call(options);
   }
   catch (error) { console.log('kaltura_session_start - ' + error); }
 }
@@ -130,14 +119,36 @@ function kaltura_session_start() {
  */
 function kaltura_media_get(options) {
   try {
-    dpm(options);
-    var config = new KalturaConfiguration(drupalgap.settings.kaltura.partnerId);
-    config.serviceUrl = drupalgap.settings.kaltura.serviceUrl;
-    var client = new KalturaClient(config);
-    var entryId = options.item.entryid;
-    var version = null;
-    var result = client.media.get(options.cb, entryId, version);
+    kConfig = new KalturaConfiguration(kaltura_partnerId_get());
+    kConfig.serviceUrl = kaltura_serviceUrl_get();
+    kClient = new KalturaClient(kConfig);
+    kClient.ks = kSession;
+    kClient.media.get(options.success, options.item.entryid);
   }
   catch (error) { console.log('kaltura_media_get - ' + error); }
+}
+
+/**********|
+ * HELPERS |
+ **********/
+
+/**
+ *
+ */
+function kaltura_partnerId_get() {
+  try {
+    return drupalgap.settings.kaltura.partnerId;
+  }
+  catch (error) { console.log('kaltura_partnerId_get - ' + error); }
+}
+
+/**
+ *
+ */
+function kaltura_serviceUrl_get() {
+  try {
+    return drupalgap.settings.kaltura.serviceUrl;
+  }
+  catch (error) { console.log('kaltura_serviceUrl_get - ' + error); }
 }
 
