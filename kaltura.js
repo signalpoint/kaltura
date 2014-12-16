@@ -119,10 +119,14 @@ function kaltura_session_start(options) {
  */
 function kaltura_media_get(options) {
   try {
-    kConfig = new KalturaConfiguration(kaltura_partnerId_get());
-    kConfig.serviceUrl = kaltura_serviceUrl_get();
-    kClient = new KalturaClient(kConfig);
-    kClient.ks = kSession;
+    if (!kConfig) {
+      kConfig = new KalturaConfiguration(kaltura_partnerId_get());
+      kConfig.serviceUrl = kaltura_serviceUrl_get();
+    }
+    if (!kClient) {
+      kClient = new KalturaClient(kConfig);
+      kClient.ks = kSession;
+    }
     kClient.media.get(options.success, options.item.entryid);
   }
   catch (error) { console.log('kaltura_media_get - ' + error); }
