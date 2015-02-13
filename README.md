@@ -65,3 +65,10 @@ And set the playerID value above with a value obtained here:
 
 http://kmc.kaltura.com/index.php/kmc/kmc4#studio|universal_studio
 
+Finally, if you plan on playing videos from Kaltura in your app, add this to
+your index.html file above the inclusion of the drupalgap.js file:
+
+```
+<script type="text/javascript" src="http://player.kaltura.com/mwEmbedLoader.php"></script>
+```
+
