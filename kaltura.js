@@ -69,6 +69,7 @@ function field_kaltura_field_formatter_view(entity_type, entity, field, instance
   try {
     
     dpm('field_kaltura_field_formatter_view');
+    console.log(entity);
     
     /*dpm(entity_type);
     dpm(entity);
@@ -81,15 +82,46 @@ function field_kaltura_field_formatter_view(entity_type, entity, field, instance
     // Iterate over each item, and place a widget onto the render array.
     var content = {};
     $.each(items, function(delta, item) {
-        content[delta] = {
-          markup: '<div id="' + item.entryid + '"></div>' +
-            drupalgap_jqm_page_event_script_code({
-              page_id: drupalgap_get_page_id(),
-              jqm_page_event: 'pageshow',
-              jqm_page_event_callback: 'field_kaltura_field_formatter_view_pageshow',
-              jqm_page_event_args: JSON.stringify(item)
-            }, item.entryid)
-        };
+        console.log(item);
+        switch (item.mediatype) {
+        case '1':
+          var id = kaltura_partnerId_get();
+          var target_id = item.entryid + '_player';
+          var player_id = drupalgap.settings.kaltura.playerId;
+          content[delta] = {
+            markup: 
+                  '<div id="' + target_id + '" style="width:400px;height:330px;"></div>' +
+                  '<!-- Substitute {partnerId} for your Kaltura partner id, {uiConfId} for an actual player id, also known as the uiconf id and {entryId} for an actual entry id. -->' +
+                  '<script src="http://cdnapi.kaltura.com/p/' + id + '/sp/' + id + '00/embedIframeJs/uiconf_id/' + player_id + '/partner_id/' + id + '"></script>' +
+                  '<script>' +    
+                    'kWidget.embed({' +
+                        '"targetId": "' + target_id + '",' +
+                        '"wid": "_' + id + '",' +
+                        '"uiconf_id" : "' + player_id + '",' +
+                        '"entry_id" : "' + item.entryid + '",' +
+                        '"flashvars" : {' +
+                          '"autoPlay": false' +
+                        '},' +
+                        '"params":{' +
+                          '"wmode": "transparent"' +
+                        '}' +
+                    '});' +
+                  '</script>'
+          };
+          break;
+        case '2':
+          content[delta] = {
+            markup: '<div id="' + item.entryid + '"></div>' +
+              drupalgap_jqm_page_event_script_code({
+                page_id: drupalgap_get_page_id(),
+                jqm_page_event: 'pageshow',
+                jqm_page_event_callback: 'field_kaltura_field_formatter_view_pageshow',
+                jqm_page_event_args: JSON.stringify(item)
+              }, item.entryid)
+          };
+          break;
+        }
+        
     });
     return content;
 
@@ -106,7 +138,17 @@ function field_kaltura_field_formatter_view_pageshow(item) {
         item: item,
         success: function(success, data) {
           if (success) {
-            $('#' + data.id).html(theme('image', { path: data.dataUrl })).trigger('create');
+            console.log(data);
+            var html = '';
+            switch (data.mediaType) {
+              case 2:
+                html = theme('image', { path: data.dataUrl });
+                break;
+              default:
+                console.log('');
+                break;
+            }
+            $('#' + data.id).html(html).trigger('create');
           }
         }
     });
@@ -147,12 +189,41 @@ function kaltura_field_widget_click() {
     // If we have a file...
     if (input.files && input.files[0]) {
       
+      var file_name = input.value.split(/(\\|\/)/g).pop();
+      
+      // Build the file reader to base 64 encode the image file data.
+      var FR= new FileReader();
+      FR.onload = function(e) {
+
+        // Upload the file to the server.
+        console.log('uploading file to server...');
+        babyflix_add_content(file_name, e.target.result, {
+            success: function(result) {
+              console.log('done');
+              console.log(result);
+            }
+        });
+
+      };
+      console.log('encoding image...');
+      FR.readAsDataURL(input.files[0]);
+      
+      
+      return;
+      
+      
+      
+      
+      
+      
+      
+      
       // Init the api.
       kaltura_api_init();
       
       // Let's first generate an upload token.
       var uploadToken = new KalturaUploadToken();
-      uploadToken.fileName = input.value.split(/(\\|\/)/g).pop();
+      uploadToken.fileName = file_name;
       
       // Build its success callback.
       var uploadTokenCallback = function(token_success, token_results) {
