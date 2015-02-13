@@ -50,12 +50,18 @@ Add the module's settings to your settings.js file:
  * Kaltura Settings |
  *******************/
 drupalgap.settings.kaltura = {
+  KS: '', /* do not change */
   serviceUrl: 'http://www.kaltura.com/', /* do not change */
-  partnerId: 1234567890 /* set to your Kaltura Partner ID */
+  partnerId: 123456789, /* set to your Kaltura Partner ID */
+  playerId: 987654321 /* a player id available in the KMC Studio */
 };
 ```
 
 Then set the partnerId value above with the value obtained here:
 
 https://kmc.kaltura.com/index.php/kmc/kmc#account|integration
+
+And set the playerID value above with a value obtained here:
+
+http://kmc.kaltura.com/index.php/kmc/kmc4#studio|universal_studio
 
